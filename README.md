@@ -1,88 +1,60 @@
-Com base nas suas informações (Linux Mint 21.2 "Zara", codinome Ubuntu **`noble`**) e nas instruções oficiais do Docker, o método mais recomendado é **"Install using the `apt` repository"**.
+Com base no sistema operacional que você está usando (Linux Mint 21.2 "Zara", baseado no Ubuntu **`noble`**) e sabendo que você já está usando o terminal, a maneira mais fácil e recomendada de instalar o Visual Studio Code (VS Code) é usando o repositório oficial do Visual Studio Code.
 
-Este método garante que você terá o Docker Engine e o **Docker Compose Plugin** (a versão moderna) instalados corretamente e poderá mantê-los atualizados via `apt`.
-
------
-
-## 🚀 Passo a Passo: Instalação Oficial do Docker no Linux Mint
-
-Siga esta sequência de comandos no terminal. Como o seu Mint é baseado no Ubuntu Noble (24.04), usaremos o codinome `noble` para configurar o repositório.
-
-### Etapa 1: Preparação e Remoção de Conflitos
-
-Primeiro, garanta que não há pacotes ou arquivos de configuração antigos que possam causar os erros que você encontrou anteriormente.
-
-```bash
-# 1. Tenta remover quaisquer pacotes Docker não oficiais/conflitantes (conforme documentação)
-sudo apt remove docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc
-
-# 2. Limpa o diretório de listas de fontes, caso haja arquivos incompletos como 'docker.list.d'
-sudo rm -f /etc/apt/sources.list.d/docker.list*
-
-# 3. Remove chaves GPG antigas/conflitantes
-sudo rm -f /etc/apt/keyrings/docker.asc /etc/apt/keyrings/docker.gpg
-```
+Aqui está o passo a passo completo, via terminal:
 
 -----
 
-### Etapa 2: Configurar o Repositório Oficial do Docker
+## 💻 Instalação do Visual Studio Code
 
-Vamos adicionar a chave de segurança GPG e configurar o arquivo de fontes para que o `apt` saiba onde baixar os pacotes.
+O VS Code disponibiliza um repositório APT próprio, o que garante que você sempre receberá as atualizações através do comando `sudo apt update` e `sudo apt upgrade`.
 
-```bash
-# 1. Atualiza o sistema e instala utilitários essenciais
-sudo apt update
-sudo apt install ca-certificates curl gnupg
+### Etapa 1: Instalar Dependências e a Chave GPG
 
-# 2. Cria o diretório de keyrings (se necessário) e configura permissões
-sudo install -m 0755 -d /etc/apt/keyrings
-
-# 3. Baixa a chave GPG oficial do Docker
-sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-# 4. Adiciona o repositório do Docker à lista de fontes. 
-# O comando usa 'noble' como CODENAME, conforme identificado no seu sistema.
-echo \
-  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-  noble stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-```
-
------
-
-### Etapa 3: Instalar Docker e Docker Compose Plugin
-
-Agora você pode atualizar e instalar o software. O pacote `docker-compose-plugin` instala o Docker Compose moderno.
+Precisamos instalar algumas dependências e adicionar a chave de segurança (GPG key) do Microsoft VS Code ao seu sistema:
 
 ```bash
-# 1. Atualiza a lista de pacotes para incluir o novo repositório Docker
+# 1. Atualiza a lista de pacotes
 sudo apt update
 
-# 2. Instala os pacotes principais do Docker e o Plugin Compose
-sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+# 2. Instala pacotes necessários para usar repositórios via HTTPS
+sudo apt install apt-transport-https wget -y
+
+# 3. Baixa e adiciona a chave GPG pública da Microsoft.
+# Esta chave garante que os pacotes que você baixar são autênticos.
+wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+```
+
+### Etapa 2: Adicionar o Repositório do VS Code
+
+Agora, você adiciona o repositório oficial do VS Code à sua lista de fontes de software:
+
+```bash
+# Adiciona o repositório do VS Code (compatível com sistemas baseados em Debian/Ubuntu)
+sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main" > /etc/apt/sources.list.d/vscode.list'
+```
+
+### Etapa 3: Instalar o Visual Studio Code
+
+Com o repositório configurado, você pode atualizar a lista de pacotes e instalar o VS Code:
+
+```bash
+# 1. Atualiza a lista de pacotes para incluir o novo repositório
+sudo apt update
+
+# 2. Instala o Visual Studio Code
+sudo apt install code
 ```
 
 -----
 
-### Etapa 4: Teste e Pós-Instalação (Usar Sem `sudo`)
+## ✅ Como Iniciar o VS Code
 
-O Docker já deve estar rodando após a instalação.
+Após a instalação, você pode iniciar o Visual Studio Code de duas maneiras:
 
-```bash
-# 1. Verifica se a instalação foi bem-sucedida
-sudo docker run hello-world
+1.  **Pelo Terminal:** Basta digitar o comando:
+    ```bash
+    code
+    ```
+2.  **Pelo Menu Gráfico:** Procure por "Visual Studio Code" no menu de aplicativos do Linux Mint.
 
-# 2. Adiciona seu usuário atual ao grupo 'docker' para rodar comandos sem 'sudo'
-sudo usermod -aG docker $USER
-
-# 3. ATENÇÃO: Para que a permissão entre em vigor IMEDIATAMENTE, execute este comando.
-# Alternativamente, você pode simplesmente fechar e reabrir o terminal ou reiniciar o PC.
-newgrp docker
-
-# 4. Teste final (sem 'sudo')
-docker run hello-world
-
-# 5. Verifique se o Docker Compose Plugin está funcionando (comando sem traço)
-docker compose version
-```
+Pronto\! Seu VS Code está instalado e pronto para usar.
