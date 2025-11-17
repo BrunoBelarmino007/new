@@ -1,90 +1,222 @@
-Sua solicitação anterior foi sobre **como instalar o OpenVAS (GVM) em uma VM com Linux Mint**, e eu forneci duas opções detalhadas (via `apt` e via Docker).
+nstall Docker Engine on Ubuntu
+Page options
+To get started with Docker Engine on Ubuntu, make sure you meet the prerequisites, and then follow the installation steps.
 
-Abaixo, apresento uma **avaliação** da minha resposta anterior e as **melhorias** que podem ser feitas para torná-la ainda mais clara e útil, especialmente em relação aos passos críticos.
+Prerequisites
+Firewall limitations
+Warning
+Before you install Docker, make sure you consider the following security implications and firewall incompatibilities.
 
------
+If you use ufw or firewalld to manage firewall settings, be aware that when you expose container ports using Docker, these ports bypass your firewall rules. For more information, refer to Docker and ufw.
+Docker is only compatible with iptables-nft and iptables-legacy. Firewall rules created with nft are not supported on a system with Docker installed. Make sure that any firewall rulesets you use are created with iptables or ip6tables, and that you add them to the DOCKER-USER chain, see Packet filtering and firewalls.
+OS requirements
+To install Docker Engine, you need the 64-bit version of one of these Ubuntu versions:
 
-## 🔍 Avaliação e Melhorias da Resposta Anterior
+Ubuntu Questing 25.10
+Ubuntu Plucky 25.04
+Ubuntu Noble 24.04 (LTS)
+Ubuntu Jammy 22.04 (LTS)
+Docker Engine for Ubuntu is compatible with x86_64 (or amd64), armhf, arm64, s390x, and ppc64le (ppc64el) architectures.
 
-### Pontos Fortes
+Note
+Installation on Ubuntu derivative distributions, such as Linux Mint, is not officially supported (though it may work).
 
-  * **Opções Relevantes:** Foram apresentadas as duas melhores opções para o Linux Mint (instalação direta e via Docker).
-  * **Reconhecimento da Dificuldade:** A resposta destacou corretamente que o processo não é trivial no Mint como é no Kali Linux.
-  * **Passos Lógicos:** As etapas de pré-requisitos (instalar Docker) e execução (`docker-compose`) foram bem estruturadas.
+Uninstall old versions
+Before you can install Docker Engine, you need to uninstall any conflicting packages.
 
-### Oportunidades de Melhoria
+Your Linux distribution may provide unofficial Docker packages, which may conflict with the official packages provided by Docker. You must uninstall these packages before you install the official version of Docker Engine.
 
-1.  **Foco no Repositório do Mint:** A seção do `apt` usou um PPA genérico (`mrz-skill78/gvm-stable`). O Linux Mint, sendo baseado no Ubuntu, muitas vezes se beneficia de PPAs específicos ou da compilação, mas a maneira mais "oficial" (e que gera menos problemas) é via o **método de Containers (Docker)**. A resposta deve reforçar que o Docker é o método mais **estável e recomendado** pela própria Greenbone.
-2.  **Comando Docker Simplificado:** O comando para rodar com Docker pode ser simplificado, usando a imagem mais comum e um passo mais direto para iniciantes.
-3.  **Destaque da Senha:** O passo de **obter a senha** do administrador é o mais crucial após a instalação via Docker e deve ser destacado com clareza.
+The unofficial packages to uninstall are:
 
------
+docker.io
+docker-compose
+docker-compose-v2
+docker-doc
+podman-docker
+Moreover, Docker Engine depends on containerd and runc. Docker Engine bundles these dependencies as one bundle: containerd.io. If you have installed the containerd or runc previously, uninstall them to avoid conflicts with the versions bundled with Docker Engine.
 
-## 🛠️ Resposta Otimizada: Instalação do OpenVAS (GVM) no Linux Mint
+Run the following command to uninstall all conflicting packages:
 
-O método **mais estável e recomendado** para rodar o Greenbone Vulnerability Management (GVM), que inclui o OpenVAS Scanner, em um sistema como o Linux Mint é através do **Docker**. Isso garante que todas as dependências complexas sejam gerenciadas dentro do contêiner.
 
-### 1\. Pré-requisito: Instalar o Docker e Docker Compose
+ sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1)
+apt might report that you have none of these packages installed.
 
-Primeiro, você precisa instalar o ambiente de containers.
+Images, containers, volumes, and networks stored in /var/lib/docker/ aren't automatically removed when you uninstall Docker. If you want to start with a clean installation, and prefer to clean up any existing data, read the uninstall Docker Engine section.
 
-```bash
-# 1. Instalar pacotes de suporte
+Installation methods
+You can install Docker Engine in different ways, depending on your needs:
+
+Docker Engine comes bundled with Docker Desktop for Linux. This is the easiest and quickest way to get started.
+
+Set up and install Docker Engine from Docker's apt repository.
+
+Install it manually and manage upgrades manually.
+
+Use a convenience script. Only recommended for testing and development environments.
+
+Apache License, Version 2.0. See LICENSE for the full license.
+
+Install using the apt repository
+Before you install Docker Engine for the first time on a new host machine, you need to set up the Docker apt repository. Afterward, you can install and update Docker from the repository.
+
+Set up Docker's apt repository.
+
+
+# Add Docker's official GPG key:
 sudo apt update
-sudo apt install ca-certificates curl gnupg lsb-release
-
-# 2. Adicionar a chave GPG oficial do Docker
+sudo apt install ca-certificates curl
 sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
 
-# 3. Adicionar o repositório do Docker
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
 
-# 4. Instalar o Docker CE e o Docker Compose
 sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-```
+Install the Docker packages.
 
-  * **Adicione seu usuário ao grupo `docker`** para evitar usar `sudo` a todo momento (reinicie a sessão depois):
-    ```bash
-    sudo usermod -aG docker $USER
-    ```
+Latest Specific version
+To install the latest version, run:
 
-### 2\. Rodar o Greenbone/OpenVAS com Docker Compose
 
-A Greenbone fornece um *script* simples que baixa e configura todas as imagens necessárias.
+ sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+Note
+The Docker service starts automatically after installation. To verify that Docker is running, use:
 
-1.  **Crie um diretório** e navegue até ele:
-    ```bash
-    mkdir gvm-docker && cd gvm-docker
-    ```
-2.  **Baixe e execute a ferramenta GVM-Tools** para gerenciar a instalação (que simplifica a obtenção do arquivo `docker-compose.yml` e a execução):
-    ```bash
-    docker run --rm -it -v $PWD:/data greenbone/gvm-tools:stable gvm-container
-    ```
-      * Este comando pode te guiar no processo ou você pode baixar o arquivo `docker-compose.yml` de uma fonte confiável e executar:
-        ```bash
-        sudo docker-compose -f docker-compose.yml pull
-        sudo docker-compose -f docker-compose.yml up -d
-        ```
-      * **Atenção:** O download das imagens é grande e o primeiro *startup* leva tempo para baixar todas as assinaturas de vulnerabilidades (VTs).
 
-### 3\. Acesso e Configuração Inicial (Crítico\! 🔑)
+ sudo systemctl status docker
+Some systems may have this behavior disabled and will require a manual start:
 
-Após a inicialização, você precisa obter a senha para o usuário administrador.
 
-1.  **Verifique se os contêineres estão rodando:**
-    ```bash
-    sudo docker ps
-    ```
-2.  **Obtenha a senha do usuário `admin`:**
-    A senha é gerada aleatoriamente na primeira execução e fica registrada nos logs do contêiner de configuração:
-    ```bash
-    # Procure a senha gerada (geralmente nos logs do 'gvm-manager' ou 'gvm-setup')
-    sudo docker-compose logs | grep "password"
-    ```
-3.  **Acesse a Interface Web (GSA):**
-    Abra seu navegador na VM e navegue para **`https://127.0.0.1`** (ou `https://localhost`). Ignore o aviso de certificado.
-4.  **Faça Login:**
-    Use o usuário **`admin`** e a **senha** que você recuperou nos logs para acessar o Greenbone Security Assistant (GSA).
+ sudo systemctl start docker
+Verify that the installation is successful by running the hello-world image:
+
+
+ sudo docker run hello-world
+This command downloads a test image and runs it in a container. When the container runs, it prints a confirmation message and exits.
+
+You have now successfully installed and started Docker Engine.
+
+Tip
+Receiving errors when trying to run without root?
+
+The docker user group exists but contains no users, which is why you’re required to use sudo to run Docker commands. Continue to Linux postinstall to allow non-privileged users to run Docker commands and for other optional configuration steps.
+
+Upgrade Docker Engine
+To upgrade Docker Engine, follow step 2 of the installation instructions, choosing the new version you want to install.
+
+Install from a package
+If you can't use Docker's apt repository to install Docker Engine, you can download the deb file for your release and install it manually. You need to download a new file each time you want to upgrade Docker Engine.
+
+Go to https://download.docker.com/linux/ubuntu/dists/.
+
+Select your Ubuntu version in the list.
+
+Go to pool/stable/ and select the applicable architecture (amd64, armhf, arm64, or s390x).
+
+Download the following deb files for the Docker Engine, CLI, containerd, and Docker Compose packages:
+
+containerd.io_<version>_<arch>.deb
+docker-ce_<version>_<arch>.deb
+docker-ce-cli_<version>_<arch>.deb
+docker-buildx-plugin_<version>_<arch>.deb
+docker-compose-plugin_<version>_<arch>.deb
+Install the .deb packages. Update the paths in the following example to where you downloaded the Docker packages.
+
+
+ sudo dpkg -i ./containerd.io_<version>_<arch>.deb \
+  ./docker-ce_<version>_<arch>.deb \
+  ./docker-ce-cli_<version>_<arch>.deb \
+  ./docker-buildx-plugin_<version>_<arch>.deb \
+  ./docker-compose-plugin_<version>_<arch>.deb
+Note
+The Docker service starts automatically after installation. To verify that Docker is running, use:
+
+
+ sudo systemctl status docker
+Some systems may have this behavior disabled and will require a manual start:
+
+
+ sudo systemctl start docker
+Verify that the installation is successful by running the hello-world image:
+
+
+ sudo docker run hello-world
+This command downloads a test image and runs it in a container. When the container runs, it prints a confirmation message and exits.
+
+You have now successfully installed and started Docker Engine.
+
+Tip
+Receiving errors when trying to run without root?
+
+The docker user group exists but contains no users, which is why you’re required to use sudo to run Docker commands. Continue to Linux postinstall to allow non-privileged users to run Docker commands and for other optional configuration steps.
+
+Upgrade Docker Engine
+To upgrade Docker Engine, download the newer package files and repeat the installation procedure, pointing to the new files.
+
+Install using the convenience script
+Docker provides a convenience script at https://get.docker.com/ to install Docker into development environments non-interactively. The convenience script isn't recommended for production environments, but it's useful for creating a provisioning script tailored to your needs. Also refer to the install using the repository steps to learn about installation steps to install using the package repository. The source code for the script is open source, and you can find it in the docker-install repository on GitHub.
+
+Always examine scripts downloaded from the internet before running them locally. Before installing, make yourself familiar with potential risks and limitations of the convenience script:
+
+The script requires root or sudo privileges to run.
+The script attempts to detect your Linux distribution and version and configure your package management system for you.
+The script doesn't allow you to customize most installation parameters.
+The script installs dependencies and recommendations without asking for confirmation. This may install a large number of packages, depending on the current configuration of your host machine.
+By default, the script installs the latest stable release of Docker, containerd, and runc. When using this script to provision a machine, this may result in unexpected major version upgrades of Docker. Always test upgrades in a test environment before deploying to your production systems.
+The script isn't designed to upgrade an existing Docker installation. When using the script to update an existing installation, dependencies may not be updated to the expected version, resulting in outdated versions.
+Tip
+Preview script steps before running. You can run the script with the --dry-run option to learn what steps the script will run when invoked:
+
+
+ curl -fsSL https://get.docker.com -o get-docker.sh
+ sudo sh ./get-docker.sh --dry-run
+This example downloads the script from https://get.docker.com/ and runs it to install the latest stable release of Docker on Linux:
+
+
+ curl -fsSL https://get.docker.com -o get-docker.sh
+ sudo sh get-docker.sh
+Executing docker install script, commit: 7cae5f8b0decc17d6571f9f52eb840fbc13b2737
+<...>
+You have now successfully installed and started Docker Engine. The docker service starts automatically on Debian based distributions. On RPM based distributions, such as CentOS, Fedora or RHEL, you need to start it manually using the appropriate systemctl or service command. As the message indicates, non-root users can't run Docker commands by default.
+
+Use Docker as a non-privileged user, or install in rootless mode?
+
+The installation script requires root or sudo privileges to install and use Docker. If you want to grant non-root users access to Docker, refer to the post-installation steps for Linux. You can also install Docker without root privileges, or configured to run in rootless mode. For instructions on running Docker in rootless mode, refer to run the Docker daemon as a non-root user (rootless mode).
+
+Install pre-releases
+Docker also provides a convenience script at https://test.docker.com/ to install pre-releases of Docker on Linux. This script is equal to the script at get.docker.com, but configures your package manager to use the test channel of the Docker package repository. The test channel includes both stable and pre-releases (beta versions, release-candidates) of Docker. Use this script to get early access to new releases, and to evaluate them in a testing environment before they're released as stable.
+
+To install the latest version of Docker on Linux from the test channel, run:
+
+
+ curl -fsSL https://test.docker.com -o test-docker.sh
+ sudo sh test-docker.sh
+Upgrade Docker after using the convenience script
+If you installed Docker using the convenience script, you should upgrade Docker using your package manager directly. There's no advantage to re-running the convenience script. Re-running it can cause issues if it attempts to re-install repositories which already exist on the host machine.
+
+Uninstall Docker Engine
+Uninstall the Docker Engine, CLI, containerd, and Docker Compose packages:
+
+
+ sudo apt purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
+Images, containers, volumes, or custom configuration files on your host aren't automatically removed. To delete all images, containers, and volumes:
+
+
+ sudo rm -rf /var/lib/docker
+ sudo rm -rf /var/lib/containerd
+Remove source list and keyrings
+
+
+ sudo rm /etc/apt/sources.list.d/docker.sources
+ sudo rm /etc/apt/keyrings/docker.asc
+You have to delete any edited configuration files manually.
+
+Next steps
+Continue to Post-installation steps for Linux.
